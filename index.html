@@ -92,8 +92,24 @@
 </head>
 <body>
     
-    <!-- App Container (Now visible by default, Login Modal removed) -->
-    <div id="app-container" class="">
+    <!-- Password Protection Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-gray-900/90 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
+            <!-- Bajaj Finserv Branding Placeholder -->
+            <img src="https://placehold.co/200x50/0d9488/ffffff?text=BAJAJ+FINSERV" alt="Bajaj Finserv Logo" class="mx-auto mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Secure Access Required</h2>
+            <div class="space-y-4">
+                <input type="text" id="username-input" placeholder="Username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                <input type="password" id="password-input" placeholder="Password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                <button onclick="checkCredentials()" class="w-full px-4 py-2 text-white font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 transition">Log In</button>
+                <p id="auth-message" class="text-sm text-red-500 hidden">Invalid username or password.</p>
+            </div>
+        </div>
+    </div>
+    <!-- End Password Protection Modal -->
+
+    <!-- App Container (Hidden initially, shown after authentication) -->
+    <div id="app-container" class="hidden">
         <div id="app" class="p-4 md:p-10">
             <!-- Header (Logo removed, font size reduced) -->
             <header class="text-center mb-8">
@@ -105,7 +121,7 @@
             <!-- Presentation Container -->
             <div class="max-w-5xl mx-auto bg-white rounded-xl presentation-slide-container overflow-hidden">
                 
-                <!-- Slide 1: Leader Landing Page (Dashboard View) (Old Slide 2) -->
+                <!-- Slide 1: Leader Landing Page (Dashboard View) -->
                 <div id="slide-1" class="presentation-slide p-8 md:p-12 color-employee border-b-4 border-teal-600 slide-header-container">
                     <div class="slide-top-bar">
                         <h2 class="text-3xl font-semibold slide-title">Persona: Leader | Succession Dashboard</h2>
@@ -551,44 +567,92 @@
         ];
         let currentSlideIndex = 0;
         
-        // --- CHAT LOGIC IMPLEMENTATION ---
+        // --- AUTHENTICATION LOGIC ---
+
+        const APP_CONTAINER_ID = 'app-container';
+        const AUTH_MODAL_ID = 'auth-modal';
+        const USERNAME = 'admin';
+        const PASSWORD = 'admin@123';
+        let isAuthenticated = false;
+
+        function checkCredentials() {
+            const usernameInput = document.getElementById('username-input');
+            const passwordInput = document.getElementById('password-input');
+            const authMessage = document.getElementById('auth-message');
+            const appContainer = document.getElementById(APP_CONTAINER_ID);
+            const authModal = document.getElementById(AUTH_MODAL_ID);
+
+            const user = usernameInput.value;
+            const pass = passwordInput.value;
+
+            if (user === USERNAME && pass === PASSWORD) {
+                // Success: Hide modal and show app
+                isAuthenticated = true;
+                authModal.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                authMessage.classList.add('hidden');
+                showSlide(0); // Initialize presentation on the first content slide
+            } else {
+                // Failure: Show error message
+                authMessage.textContent = 'Invalid username or password.';
+                authMessage.classList.remove('hidden');
+                usernameInput.value = '';
+                passwordInput.value = '';
+            }
+        }
+        
+        // Attach 'Enter' key listener to password input for easy login
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('password-input');
+            const loginButton = document.querySelector('#auth-modal button');
+            if (passwordInput && loginButton) {
+                passwordInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        checkCredentials();
+                    }
+                });
+                // Ensure the login button calls checkCredentials on click
+                loginButton.onclick = checkCredentials;
+            }
+            
+            // On load, if no authentication needed (which is not the case here, but for completeness)
+            if (!isAuthenticated) {
+                // Keep modal visible until authentication is successful
+            }
+        });
+
+
+        // --- CHAT LOGIC IMPLEMENTATION (Remains the same, but slide IDs are updated) ---
 
         // Global context to manage multi-step conversations
         window.chatContext = {
-            // Note: Slide IDs are updated here (old 3 is now 2, old 5 is now 4, old 7 is now 6)
-            'slide-2': null, // Leader: 'succession_step1', 'upskill_step1', 'upskill_step2'
-            'slide-4': null, // Manager: 'succession_plan_step1', 'dap_step1', 'dap_step2'
-            'slide-6': null  // CxO: 'skill_forecast_step1'
+            'slide-2': null, // Leader Agent Deep Dive
+            'slide-4': null, // Manager Agent Deep Dive
+            'slide-6': null  // CxO Agent Deep Dive
         };
 
         /**
          * Helper function to add a message to the chat window and scroll to the bottom.
-         * @param {string} slideId - The ID of the current chat slide (e.g., 'slide-2').
-         * @param {string} htmlContent - The message content (can contain HTML).
-         * @param {boolean} isAgent - True for agent (response), false for user (query).
          */
         function addMessage(slideId, htmlContent, isAgent) {
             const chatWindow = document.getElementById(`chat-window-${slideId}`);
             if (!chatWindow) return;
 
             const messageDiv = document.createElement('div');
-            
-            // Base classes for message bubble styling (responsive width and rounded corners)
             messageDiv.classList.add('p-3', 'rounded-lg', 'max-w-[85%]', 'md:max-w-[70%]', 'shadow-md', 'text-sm');
-            messageDiv.style.lineHeight = '1.4'; // Better readability
+            messageDiv.style.lineHeight = '1.4'; 
 
             if (isAgent) {
-                // Agent response styling (Teal/Green by default)
                 let bgColor = 'bg-green-100';
                 let borderColor = 'border-green-500';
                 let textColor = 'text-green-700';
                 
-                // Adjust colors based on persona
-                if (slideId === 'slide-4') { // Manager (Indigo) (Old 5)
+                if (slideId === 'slide-4') {
                     bgColor = 'bg-indigo-100';
                     borderColor = 'border-indigo-500';
                     textColor = 'text-indigo-700';
-                } else if (slideId === 'slide-6') { // CxO (Amber) (Old 7)
+                } else if (slideId === 'slide-6') {
                     bgColor = 'bg-amber-100';
                     borderColor = 'border-amber-500';
                     textColor = 'text-amber-700';
@@ -596,7 +660,6 @@
 
                 messageDiv.classList.add(bgColor, borderColor, 'border-l-4', 'mr-auto');
                 
-                // Agent header with DronaHQ co-branding - RENAMED TO AARAV
                 messageDiv.innerHTML = `<p class="font-bold mb-1 ${textColor} flex items-center justify-between">
                                             <span class="flex items-center"><span class="mr-2">🤖</span> Aarav (Talent Agent):</span>
                                             <span class="text-xs font-normal opacity-75 text-gray-600">Powered by DronaHQ</span>
@@ -604,140 +667,69 @@
                                         <div class="text-gray-800">${htmlContent}</div>`;
                 
             } else {
-                // User query styling
                 messageDiv.classList.add('bg-gray-200', 'border-l-4', 'border-gray-500', 'ml-auto');
                 messageDiv.innerHTML = `<p class="font-bold mb-1 text-gray-700">You:</p>
                                         <div class="text-gray-800">${htmlContent}</div>`;
             }
 
             chatWindow.appendChild(messageDiv);
-
-            // Auto-scroll to the bottom
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
         /**
          * Contains the simulated response logic based on persona, query, and context.
-         * @param {string} slideId - The ID of the current chat slide.
-         * @param {string} query - The user's input query.
          */
         function simulateAgentResponse(slideId, query) {
             const lowerQuery = query.toLowerCase();
             let response = '';
             let currentContext = window.chatContext[slideId];
             
-            // Simulate a slight delay for a "typing" effect
             setTimeout(() => {
                 
-                // --- SLIDE 2: LEADER PERSONA MULTI-STEP FLOW (Old Slide 3) ---
-
+                // --- SLIDE 2: LEADER PERSONA MULTI-STEP FLOW ---
                 if (slideId === 'slide-2') { 
-                    
                     if (currentContext === 'upskill_step2') {
-                         // Step 3: Provide course recommendations
                         if (lowerQuery.includes('course') || lowerQuery.includes('education')) {
-                            response = `<p class="font-bold">📚 Recommended Courses & Education (Completed):</p>
-                                        <p>Based on the **Global Regulatory** and **Board Communication** gaps, here are your prioritized paths:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Hard Skill:** Wharton Executive Program: **Global Risk & Compliance (8 weeks online)**.</li>
-                                            <li>**Soft Skill:** Bajaj Internal Academy: **Executive Presence & Boardroom Dynamics (3-day intensive)**.</li>
-                                            <li>**Action:** You are pre-approved for immediate enrollment. Click the link in your dashboard to start.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-teal-600">Plan finalized. How else can I help with your progression today?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold">📚 Recommended Courses & Education (Completed):</p><p>Based on the **Global Regulatory** and **Board Communication** gaps, here are your prioritized paths:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Hard Skill:** Wharton Executive Program: **Global Risk & Compliance (8 weeks online)**.</li><li>**Soft Skill:** Bajaj Internal Academy: **Executive Presence & Boardroom Dynamics (3-day intensive)**.</li><li>**Action:** You are pre-approved for immediate enrollment. Click the link in your dashboard to start.</li></ul><p class="mt-2 font-semibold text-teal-600">Plan finalized. How else can I help with your progression today?</p>`;
+                            window.chatContext[slideId] = null;
                         } else if (lowerQuery.includes('timeline')) {
-                            response = `<p class="font-bold">⏱️ Upskilling Timeline Snapshot:</p>
-                                        <p>The recommended courses can be completed in a total of **4 months (approx. 10 hours/week)**.</p>
-                                        <p class="mt-2 font-semibold text-teal-600">Do you want the specific **course recommendations** now or review your overall timeline?</p>`;
+                            response = `<p class="font-bold">⏱️ Upskilling Timeline Snapshot:</p><p>The recommended courses can be completed in a total of **4 months (approx. 10 hours/week)**.</p><p class="mt-2 font-semibold text-teal-600">Do you want the specific **course recommendations** now or review your overall timeline?</p>`;
                         } else {
                             response = "I'm sorry, to finalize your upskilling plan, please specify: **'course recommendations'** or **'timeline'**.";
                         }
-                    }
-                    
-                    else if (currentContext === 'upskill_step1') {
-                        // Step 2: Suggest upskill areas and move to course recommendation step
+                    } else if (currentContext === 'upskill_step1') {
                         if (lowerQuery.includes('upskill') || lowerQuery.includes('areas')) {
-                            response = `<p class="font-bold">💡 Targeted Upskill Areas Identified:</p>
-                                        <p>To close the 45% regulatory gap and the 65% communication gap, the system recommends focusing on:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Area A:** **International Compliance Frameworks** (Hard Skill).</li>
-                                            <li>**Area B:** **Executive Presence & Stakeholder Management** (Soft Skill).</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-teal-600">Great! Now, do you want **'course recommendations'** or the expected **'timeline'** for these upskilling areas?</p>`;
+                            response = `<p class="font-bold">💡 Targeted Upskill Areas Identified:</p><p>To close the 45% regulatory gap and the 65% communication gap, the system recommends focusing on:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Area A:** **International Compliance Frameworks** (Hard Skill).</li><li>**Area B:** **Executive Presence & Stakeholder Management** (Soft Skill).</li></ul><p class="mt-2 font-semibold text-teal-600">Great! Now, do you want **'course recommendations'** or the expected **'timeline'** for these upskilling areas?</p>`;
                             window.chatContext[slideId] = 'upskill_step2'; 
                         } else if (lowerQuery.includes('mentor')) {
-                            response = `<p class="font-bold">🤝 Mentor Match Found:</p>
-                                        <p>Based on your need for global experience and board exposure, 2 top mentors have been identified:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Mentor 1:** **Ayesha K.** (EVP, Global Ops) - Specializes in Board Comm. (98% match).</li>
-                                            <li>**Mentor 2:** **Vikram R.** (Chief Risk Officer) - Deep experience in Regulatory Strategy (95% match).</li>
-                                            <li>**Action:** A 30-min meeting request has been sent to Ayesha K. for review.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-teal-600">The mentor request is complete. How else can I help with your progression today?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold">🤝 Mentor Match Found:</p><p>Based on your need for global experience and board exposure, 2 top mentors have been identified:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Mentor 1:** **Ayesha K.** (EVP, Global Ops) - Specializes in Board Comm. (98% match).</li><li>**Mentor 2:** **Vikram R.** (Chief Risk Officer) - Deep experience in Regulatory Strategy (95% match).</li><li>**Action:** A 30-min meeting request has been sent to Ayesha K. for review.</li></ul><p class="mt-2 font-semibold text-teal-600">The mentor request is complete. How else can I help with your progression today?</p>`;
+                            window.chatContext[slideId] = null;
                         } else {
                             response = "I'm sorry, please specify: **'upskill areas'** or **'mentor match'**.";
                         }
-                    }
-
-                    else if (currentContext === 'succession_step1') {
-                        // Step 1: Branching based on user's choice (gaps or progression steps)
+                    } else if (currentContext === 'succession_step1') {
                         if (lowerQuery.includes('gaps') || lowerQuery.includes('skills')) {
-                            response = `<p class="font-bold">🎯 VP Role Skill Gaps Detected:</p>
-                                        <p>System analysis confirms your primary gaps are **Global Regulatory Strategy (45% ready)** and **Board Communication (65% ready)**. These must be addressed to unlock the VP role.</p>
-                                        <p class="mt-2 font-semibold text-teal-600">Would you like to review specific **'upskill areas'** or explore a **'mentor match'** to address these gaps?</p>`;
-                            window.chatContext[slideId] = 'upskill_step1'; // Move to next upskill step
+                            response = `<p class="font-bold">🎯 VP Role Skill Gaps Detected:</p><p>System analysis confirms your primary gaps are **Global Regulatory Strategy (45% ready)** and **Board Communication (65% ready)**. These must be addressed to unlock the VP role.</p><p class="mt-2 font-semibold text-teal-600">Would you like to review specific **'upskill areas'** or explore a **'mentor match'** to address these gaps?</p>`;
+                            window.chatContext[slideId] = 'upskill_step1';
                         } else if (lowerQuery.includes('progression') || lowerQuery.includes('steps')) {
-                            response = `<p class="font-bold">🚀 Progression Steps (Completed):</p>
-                                        <p>The system recommends a **6-month Regulatory Secondment** in Q1, followed by a **Board Readiness Simulation Program** in Q3 to close your experience gaps.</p>
-                                        <p class="mt-2 font-semibold text-teal-600">The plan is locked. How else can I help with your career growth today?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold">🚀 Progression Steps (Completed):</p><p>The system recommends a **6-month Regulatory Secondment** in Q1, followed by a **Board Readiness Simulation Program** in Q3 to close your experience gaps.</p><p class="mt-2 font-semibold text-teal-600">The plan is locked. How else can I help with your career growth today?</p>`;
+                            window.chatContext[slideId] = null;
                         } else {
                             response = "I'm sorry, I didn't catch that. Please respond with either **'gaps'** or **'progression steps'** to explore your VP readiness further.";
                         }
-                    } 
-                    
-                    // --- NEW FLOW INITIATION & SINGLE-STEP RESPONSES (No Context) ---
-                    
-                    else { // First interaction or context reset
+                    } else { 
                         if (lowerQuery.includes('succession') || lowerQuery.includes('next level') || lowerQuery.includes('vp')) {
                             window.chatContext[slideId] = 'succession_step1';
-                            response = `<p class="font-bold">💼 VP Readiness Analysis (Step 1 of 3):</p>
-                                        <p>Your current readiness score for **VP of Enterprise Risk** is **75%**. This puts you on track for a 12-18 month timeline.</p>
-                                        <p class="mt-2 font-semibold">To proceed, would you like to explore your **'gaps'** (required skills) or the full **'progression steps'**?</p>`;
+                            response = `<p class="font-bold">💼 VP Readiness Analysis (Step 1 of 3):</p><p>Your current readiness score for **VP of Enterprise Risk** is **75%**. This puts you on track for a 12-18 month timeline.</p><p class="mt-2 font-semibold">To proceed, would you like to explore your **'gaps'** (required skills) or the full **'progression steps'**?</p>`;
                         } else if (lowerQuery.includes('skills needed') || lowerQuery.includes('skills for vp')) {
                             window.chatContext[slideId] = null;
-                            response = `
-                                <p class="font-bold">💡 Key Skills Needed for VP Role:</p>
-                                <p>To achieve 100% readiness, focus on:</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Hard Skill:** Global Regulatory Strategy (45% complete).</li>
-                                    <li>**Soft Skill:** Board Communication & Presence (65% complete).</li>
-                                    <li>**Action:** Prioritize the 'Global Risk Strategy Certification' course this quarter.</li>
-                                </ul>
-                            `;
+                            response = `<p class="font-bold">💡 Key Skills Needed for VP Role:</p><p>To achieve 100% readiness, focus on:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Hard Skill:** Global Regulatory Strategy (45% complete).</li><li>**Soft Skill:** Board Communication & Presence (65% complete).</li><li>**Action:** Prioritize the 'Global Risk Strategy Certification' course this quarter.</li></ul>`;
                         } else if (lowerQuery.includes('mentor')) {
                             window.chatContext[slideId] = null;
-                             response = `
-                                <p class="font-bold">🤝 Mentor Match Found:</p>
-                                <p>Based on your need for global experience and board exposure, 2 top mentors have been identified:</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Mentor 1:** **Ayesha K.** (EVP, Global Ops) - Specializes in Board Comm. (98% match).</li>
-                                    <li>**Mentor 2:** **Vikram R.** (Chief Risk Officer) - Deep experience in Regulatory Strategy (95% match).</li>
-                                    <li>**Action:** A 30-min meeting request has been sent to Ayesha K. for review.</li>
-                                </ul>
-                            `;
+                             response = `<p class="font-bold">🤝 Mentor Match Found:</p><p>Based on your need for global experience and board exposure, 2 top mentors have been identified:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Mentor 1:** **Ayesha K.** (EVP, Global Ops) - Specializes in Board Comm. (98% match).</li><li>**Mentor 2:** **Vikram R.** (Chief Risk Officer) - Deep experience in Regulatory Strategy (95% match).</li><li>**Action:** A 30-min meeting request has been sent to Ayesha K. for review.</li></ul>`;
                         } else if (lowerQuery.includes('performance') || lowerQuery.includes('q3')) {
                             window.chatContext[slideId] = null;
-                             response = `
-                                <p class="font-bold">📈 Q3 Performance Feedback Summary:</p>
-                                <p>Your Q3 rating was **4.0/5.0 (Exceeds Expectations)**. Key feedback areas:</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Strategic Input:** Achieved 100% (Target: 95%). <span class="text-green-600 font-bold">Excellent.</span></li>
-                                    <li>**Team Development:** Needs improvement in delegation and coaching. <span class="text-amber-600 font-bold">Medium.</span></li>
-                                    <li>**Action:** Schedule a session with your Manager to focus on delegated project success metrics.</li>
-                                </ul
-                            `;
+                             response = `<p class="font-bold">📈 Q3 Performance Feedback Summary:</p><p>Your Q3 rating was **4.0/5.0 (Exceeds Expectations)**. Key feedback areas:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Strategic Input:** Achieved 100% (Target: 95%). <span class="text-green-600 font-bold">Excellent.</span></li><li>**Team Development:** Needs improvement in delegation and coaching. <span class="text-amber-600 font-bold">Medium.</span></li><li>**Action:** Schedule a session with your Manager to focus on delegated project success metrics.</li></ul`;
                         } else {
                             window.chatContext[slideId] = null;
                             response = "Hello, **Rohan**! I see your Progression Card is up-to-date. I'm Aarav, ready to help you accelerate your leadership journey. Try asking about your **'Next Level Succession'** to begin or 'mentor for global role'.";
@@ -745,120 +737,56 @@
                     }
                 }
                 
-                // --- SLIDE 4: MANAGER PERSONA MULTI-STEP FLOW (Old Slide 5) ---
+                // --- SLIDE 4: MANAGER PERSONA MULTI-STEP FLOW ---
                 
-                else if (slideId === 'slide-4') { // Manager Persona (Old 5)
-                    
+                else if (slideId === 'slide-4') {
                     if (currentContext === 'dap_step1') {
-                        // Step 2: DAP creation confirmation and upskilling course suggestion
                         const dapMatch = query.match(/(\w+ \w+),?\s*(.*)/i);
                         if (dapMatch) {
                             const leaderName = dapMatch[1].trim();
                             const focusArea = dapMatch[2].trim() || "Leadership Effectiveness";
-
                             window.chatContext[slideId] = 'dap_step2';
-                            response = `<p class="font-bold text-indigo-700">✅ DAP Created (Step 2 of 2):</p>
-                                        <p>Development Action Plan for **${leaderName}** is successfully updated. Primary focus: **${focusArea}**.</p>
-                                        <p class="font-bold mt-2">To support this, I have identified two key upskilling paths:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Course 1:** **Advanced Strategic Execution** (MIT Sloan, 4 weeks). Relevance: 92%.</li>
-                                            <li>**Course 2:** **Bajaj Leadership Coaching Certification** (Internal). Relevance: 88%.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-indigo-700">Shall I **'suggest course'** enrollment, or do you need a **'mentor match'** for ${leaderName}'s DAP?</p>`;
+                            response = `<p class="font-bold text-indigo-700">✅ DAP Created (Step 2 of 2):</p><p>Development Action Plan for **${leaderName}** is successfully updated. Primary focus: **${focusArea}**.</p><p class="font-bold mt-2">To support this, I have identified two key upskilling paths:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Course 1:** **Advanced Strategic Execution** (MIT Sloan, 4 weeks). Relevance: 92%.</li><li>**Course 2:** **Bajaj Leadership Coaching Certification** (Internal). Relevance: 88%.</li></ul><p class="mt-2 font-semibold text-indigo-700">Shall I **'suggest course'** enrollment, or do you need a **'mentor match'** for ${leaderName}'s DAP?</p>`;
                         } else {
                             response = "I couldn't identify the leader and skill. Please rephrase the DAP request as: **'Leader Name, Skill Focus'** (e.g., 'Rohan Verma, Board Communication').";
                         }
-                    } 
-                    
-                    else if (currentContext === 'dap_step2') {
-                         // Step 3: Course suggestion/enrollment
+                    } else if (currentContext === 'dap_step2') {
                         if (lowerQuery.includes('course') || lowerQuery.includes('enrollment') || lowerQuery.includes('suggest')) {
-                            response = `<p class="font-bold text-green-700">🚀 DAP Upskilling Actioned (Completed):</p>
-                                        <p>Enrollment request for the **Advanced Strategic Execution** course has been automatically submitted for the leader. You will receive confirmation shortly.</p>
-                                        <p class="mt-2 font-semibold text-indigo-700">DAP process complete. How else can I assist with your talent management today?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold text-green-700">🚀 DAP Upskilling Actioned (Completed):</p><p>Enrollment request for the **Advanced Strategic Execution** course has been automatically submitted for the leader. You will receive confirmation shortly.</p><p class="mt-2 font-semibold text-indigo-700">DAP process complete. How else can I assist with your talent management today?</p>`;
+                            window.chatContext[slideId] = null;
                         } else if (lowerQuery.includes('mentor')) {
-                            // Note: We use a placeholder for leaderName and focusArea here as they are not explicitly stored in global state for simplicity
-                            const placeholderName = "Rohan Verma";
                             const placeholderArea = "Board Communication";
-                            response = `<p class="font-bold text-indigo-700">🤝 Mentor Match Requested (Completed):</p>
-                                        <p>The system is currently matching **${placeholderArea}** with senior leaders with high proficiency in this area. A list will be sent to your email (aarti.sharma@bajajfinserv.com) within 2 hours.</p>
-                                        <p class="mt-2 font-semibold text-indigo-700">Mentor matching complete. How else can I assist with your talent management today?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold text-indigo-700">🤝 Mentor Match Requested (Completed):</p><p>The system is currently matching **${placeholderArea}** with senior leaders with high proficiency in this area. A list will be sent to your email (aarti.sharma@bajajfinserv.com) within 2 hours.</p><p class="mt-2 font-semibold text-indigo-700">Mentor matching complete. How else can I assist with your talent management today?</p>`;
+                            window.chatContext[slideId] = null;
                         } else {
                             response = "I'm sorry, to complete the DAP, please select: **'suggest course'** or **'mentor match'**.";
                         }
-                    }
-                    
-                    else if (currentContext === 'succession_plan_step1') {
+                    } else if (currentContext === 'succession_plan_step1') {
                         if (lowerQuery.includes('pooja')) {
-                            response = `<p class="font-bold text-red-700">✅ Succession Plan: Pooja V. (Completed)</p>
-                                        <p>Pooja's current readiness for next level is **85%**. Her high-flight risk requires immediate action:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Action 1 (Immediate):** Fast-track nomination for the 'Emerging Leaders' Cohort.</li>
-                                            <li>**Action 2 (Short-term):** Approve budget for external specialization course.</li>
-                                            <li>**Action 3 (Long-term):** Guarantee a lateral promotion opportunity within 9 months.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-indigo-700">The plan is logged. Do you want to review Suresh's retirement plan or 'compare talent'?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold text-red-700">✅ Succession Plan: Pooja V. (Completed)</p><p>Pooja's current readiness for next level is **85%**. Her high-flight risk requires immediate action:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Action 1 (Immediate):** Fast-track nomination for the 'Emerging Leaders' Cohort.</li><li>**Action 2 (Short-term):** Approve budget for external specialization course.</li><li>**Action 3 (Long-term):** Guarantee a lateral promotion opportunity within 9 months.</li></ul><p class="mt-2 font-semibold text-indigo-700">The plan is logged. Do you want to review Suresh's retirement plan or 'compare talent'?</p>`;
+                            window.chatContext[slideId] = null;
                         } else if (lowerQuery.includes('suresh')) {
-                            response = `<p class="font-bold text-amber-700">✅ Succession Plan: Suresh T. (Completed)</p>
-                                        <p>Suresh T. is retiring in 18 months. System identifies two immediate internal successors:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>**Successor 1:** Vijay K. (92% Readiness, 6-9 month readiness gap).</li>
-                                            <li>**Successor 2:** Aarti P. (88% Readiness, 9-12 month readiness gap).</li>
-                                            <li>**Recommendation:** Begin immediate **cross-functional shadowing** for Vijay K. to close experience gaps.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-indigo-700">The system has logged these actions. Do you want to review Pooja's flight risk plan?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold text-amber-700">✅ Succession Plan: Suresh T. (Completed)</p><p>Suresh T. is retiring in 18 months. System identifies two immediate internal successors:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Successor 1:** Vijay K. (92% Readiness, 6-9 month readiness gap).</li><li>**Successor 2:** Aarti P. (88% Readiness, 9-12 month readiness gap).</li><li>**Recommendation:** Begin immediate **cross-functional shadowing** for Vijay K. to close experience gaps.</li></ul><p class="mt-2 font-semibold text-indigo-700">The system has logged these actions. Do you want to review Pooja's flight risk plan?</p>`;
+                            window.chatContext[slideId] = null;
                         } else {
                             response = "Please specify the employee's name for a detailed plan: **'Pooja'** (High Flight Risk) or **'Suresh'** (Impending Retirement)?";
                         }
-                    }
-                    
-                    else { // First interaction or context reset (New flow triggers)
+                    } else { 
                         if (lowerQuery.includes('development plan') || lowerQuery.includes('dap') || lowerQuery.includes('set goal')) {
                             window.chatContext[slideId] = 'dap_step1';
-                            response = `<p class="font-bold text-indigo-700">🎯 Leader Development Plan (DAP) Setup (Step 1 of 2):</p>
-                                        <p>I can help you create or update a DAP and suggest immediate upskilling actions.</p>
-                                        <p class="mt-2 font-semibold">Please state the leader's name and the specific skill/gap focus. (e.g., **'Rohan Verma, Board Communication'**)</p>`;
+                            response = `<p class="font-bold text-indigo-700">🎯 Leader Development Plan (DAP) Setup (Step 1 of 2):</p><p>I can help you create or update a DAP and suggest immediate upskilling actions.</p><p class="mt-2 font-semibold">Please state the leader's name and the specific skill/gap focus. (e.g., **'Rohan Verma, Board Communication'**)</p>`;
                         } else if (lowerQuery.includes('succession plan') || lowerQuery.includes('retirement') || lowerQuery.includes('exit')) {
                             window.chatContext[slideId] = 'succession_plan_step1';
-                            response = `<p class="font-bold text-red-700">🚨 Leadership Succession Plan (Step 1 of 2):</p>
-                                        <p>I can assist with plans for the two critical scenarios: **Pooja V.** (High Flight Risk) and **Suresh T.** (Impending Retirement).</p>
-                                        <p class="mt-2 font-semibold">Please specify the employee's name for a detailed plan: **'Pooja'** (High Flight Risk) or **'Suresh'** (Impending Retirement)?</p>`;
+                            response = `<p class="font-bold text-red-700">🚨 Leadership Succession Plan (Step 1 of 2):</p><p>I can assist with plans for the two critical scenarios: **Pooja V.** (High Flight Risk) and **Suresh T.** (Impending Retirement).</p><p class="mt-2 font-semibold">Please specify the employee's name for a detailed plan: **'Pooja'** (High Flight Risk) or **'Suresh'** (Impending Retirement)?</p>`;
                         } else if (lowerQuery.includes('compare') || lowerQuery.includes('talent')) {
                             window.chatContext[slideId] = null;
-                            response = `
-                                <p class="font-bold">🎯 Talent Comparison: Next-Level Readiness</p>
-                                <p>Comparing high-potential Leaders for the VP-level role:</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Vijay K.:** 92% Readiness. Strong Technical Acumen. Gap: Stakeholder Influence.</li>
-                                    <li>**Aarti P.:** 88% Readiness. Strong Leadership. Gap: Global Regulatory Knowledge.</li>
-                                    <li>**Conclusion:** Vijay K. has a shorter readiness gap (6 months vs 9 months). Recommend focus on him first.</li>
-                                </ul>
-                            `;
+                            response = `<p class="font-bold">🎯 Talent Comparison: Next-Level Readiness</p><p>Comparing high-potential Leaders for the VP-level role:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Vijay K.:** 92% Readiness. Strong Technical Acumen. Gap: Stakeholder Influence.</li><li>**Aarti P.:** 88% Readiness. Strong Leadership. Gap: Global Regulatory Knowledge.</li><li>**Conclusion:** Vijay K. has a shorter readiness gap (6 months vs 9 months). Recommend focus on him first.</li></ul>`;
                         } else if (lowerQuery.includes('project lead') || lowerQuery.includes('staffing')) {
                             window.chatContext[slideId] = null;
-                             response = `
-                                <p class="font-bold">🔍 Talent Sourcing: 'Project Titan' Lead</p>
-                                <p>Searching for Leaders with high capacity and key skills (Digital Transformation, Change Management):</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Top Match:** **Ritu S.** (Head of Digital Risk). Capacity: 25%. Skills: 9/10 Change Management.</li>
-                                    <li>**Quick Action:** Ritu's involvement has been green-lighted by her manager for a 6-month rotation.</li>
-                                </ul>
-                            `;
+                             response = `<p class="font-bold">🔍 Talent Sourcing: 'Project Titan' Lead</p><p>Searching for Leaders with high capacity and key skills (Digital Transformation, Change Management):</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Top Match:** **Ritu S.** (Head of Digital Risk). Capacity: 25%. Skills: 9/10 Change Management.</li><li>**Quick Action:** Ritu's involvement has been green-lighted by her manager for a 6-month rotation.</li></ul>`;
                         } else if (lowerQuery.includes('readiness assessment') || lowerQuery.includes('team readiness')) {
                             window.chatContext[slideId] = null;
-                             response = `
-                                <p class="font-bold">📊 Team Leadership Readiness Assessment:</p>
-                                <p>Readiness of your direct reports for the next level (VP/CXO):</p>
-                                <ul class="list-disc list-inside mt-2 space-y-1">
-                                    <li>**Average Readiness:** 78%. <span class='font-bold text-amber-600'>Moderate.</span></li>
-                                    <li>**Key Risk:** 3 of 5 direct reports need exposure to international markets.</li>
-                                    <li>**Action:** Allocate all three to the upcoming Singapore strategy trip.</li>
-                                </ul>
-                            `;
+                             response = `<p class="font-bold">📊 Team Leadership Readiness Assessment:</p><p>Readiness of your direct reports for the next level (VP/CXO):</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Average Readiness:** 78%. <span class='font-bold text-amber-600'>Moderate.</span></li><li>**Key Risk:** 3 of 5 direct reports need exposure to international markets.</li><li>**Action:** Allocate all three to the upcoming Singapore strategy trip.</li></ul>`;
                         } else {
                             window.chatContext[slideId] = null;
                             response = "Welcome, **Aarti**! I help you strategically manage your leadership reports. Try asking for a **'Development Plan'**, 'Succession plan for Suresh', or 'compare leaders'.";
@@ -866,88 +794,34 @@
                     }
                 } 
                 
-                // --- SLIDE 6: CXO PERSONA MULTI-STEP FLOW & NEW SINGLE-STEP QUERIES (Old Slide 7) ---
+                // --- SLIDE 6: CXO PERSONA MULTI-STEP FLOW & NEW SINGLE-STEP QUERIES ---
                 
-                else if (slideId === 'slide-6') { // CxO Persona (Old 7)
-                    
+                else if (slideId === 'slide-6') {
                     if (currentContext === 'skill_forecast_step1') {
-                        // Multi-step flow for Strategic Skill Forecast
                         if (lowerQuery.includes('investment') || lowerQuery.includes('budget')) {
-                            response = `<p class="font-bold">💰 Investment Required (Completed)</p>
-                                        <p>To reduce the forecast deficit from 65% to a tolerable 30% by 2028, the system recommends a **₹50 crore investment** over the next 18 months in specialized **AI Leadership Training** and **External Consulting Partnerships**.</p>
-                                        <p class="mt-2 font-semibold text-amber-700">The investment details are ready. Shall we proceed to analyzing the **critical role vacancy risk** next?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold">💰 Investment Required (Completed)</p><p>To reduce the forecast deficit from 65% to a tolerable 30% by 2028, the system recommends a **₹50 crore investment** over the next 18 months in specialized **AI Leadership Training** and **External Consulting Partnerships**.</p><p class="mt-2 font-semibold text-amber-700">The investment details are ready. Shall we proceed to analyzing the **critical role vacancy risk** next?</p>`;
+                            window.chatContext[slideId] = null;
                         } else if (lowerQuery.includes('regional') || lowerQuery.includes('location')) {
-                            response = `<p class="font-bold text-red-700">🔥 Strategic Skill Forecast - Regional (Completed)</p>
-                                        <p>The highest concentration of the AI leadership skill deficit is projected in the **Bangalore BU (75% gap)**, followed by Pune (60%). Mumbai remains relatively stable.</p>
-                                        <p class="font-bold mt-3">➡️ Immediate Strategic Action:</p>
-                                        <ul class="list-disc list-inside mt-2 space-y-1">
-                                            <li>Reallocate **Bangalore's** training budget to **external hiring** for critical roles in Q4.</li>
-                                            <li>Initiate an accelerated upskilling program in Pune.</li>
-                                        </ul>
-                                        <p class="mt-2 font-semibold text-amber-700">The regional risk is validated. What else can I analyze for you?</p>`;
-                            window.chatContext[slideId] = null; // Conversation finished
+                            response = `<p class="font-bold text-red-700">🔥 Strategic Skill Forecast - Regional (Completed)</p><p>The highest concentration of the AI leadership skill deficit is projected in the **Bangalore BU (75% gap)**, followed by Pune (60%). Mumbai remains relatively stable.</p><p class="font-bold mt-3">➡️ Immediate Strategic Action:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>Reallocate **Bangalore's** training budget to **external hiring** for critical roles in Q4.</li><li>Initiate an accelerated upskilling program in Pune.</li></ul><p class="mt-2 font-semibold text-amber-700">The regional risk is validated. What else can I analyze for you?</p>`;
+                            window.chatContext[slideId] = null;
                         } else {
                             response = "To finalize the **Strategic Skill Forecast** analysis, would you like the **required investment budget** or a **regional risk breakdown**?";
                         }
-                    } 
-                    
-                    // --- Individual Succession Planning ---
-                    else if (lowerQuery.includes('successor') || lowerQuery.includes('find successor for')) {
+                    } else if (lowerQuery.includes('successor') || lowerQuery.includes('find successor for')) {
                         window.chatContext[slideId] = null;
-                        response = `
-                            <p class="font-bold">🎯 Succession Review: CMO Role (Completed)</p>
-                            <p>Analyzing internal bench for the Chief Marketing Officer role:</p>
-                            <ul class="list-disc list-inside mt-2 space-y-1">
-                                <li>**Successor 1:** **Anya D.** (Head of Digital Marketing). Readiness: <span class='font-bold text-green-600'>85% (12-18 months)</span>. Gap: P&L Management.</li>
-                                <li>**Successor 2:** **Rajiv S.** (Head of Product Marketing). Readiness: <span class='font-bold text-amber-600'>70% (18-24 months)</span>. Gap: Investor Relations Exposure.</li>
-                                <li>**Action:** Recommend fast-tracking Anya D.'s enrollment in the 'Advanced P&L Strategy' executive course.</li>
-                            </ul>
-                        `;
-                    }
-                    
-                    // --- Organization-Wide Bench Planning ---
-                    else if (lowerQuery.includes('bench') || lowerQuery.includes('org bench strength') || lowerQuery.includes('organizational bench')) {
+                        response = `<p class="font-bold">🎯 Succession Review: CMO Role (Completed)</p><p>Analyzing internal bench for the Chief Marketing Officer role:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Successor 1:** **Anya D.** (Head of Digital Marketing). Readiness: <span class='font-bold text-green-600'>85% (12-18 months)</span>. Gap: P&L Management.</li><li>**Successor 2:** **Rajiv S.** (Head of Product Marketing). Readiness: <span class='font-bold text-amber-600'>70% (18-24 months)</span>. Gap: Investor Relations Exposure.</li><li>**Action:** Recommend fast-tracking Anya D.'s enrollment in the 'Advanced P&L Strategy' executive course.</li></ul>`;
+                    } else if (lowerQuery.includes('bench') || lowerQuery.includes('org bench strength') || lowerQuery.includes('organizational bench')) {
                         window.chatContext[slideId] = null;
-                        response = `
-                            <p class="font-bold">📊 Organization-Wide Bench Planning (Q4)</p>
-                            <p>Overall bench strength for Level 15+ critical roles:</p>
-                            <ul class="list-disc list-inside mt-2 space-y-1">
-                                <li>**Bench Depth:** **1.7X** (Overall target 2.0X).</li>
-                                <li>**Critical Roles at Risk (Bench &lt; 1.0):** Chief Architect, Global Legal Head.</li>
-                                <li>**Mitigation:** Initiate external search for high-risk roles. Increase budget allocation to accelerate readiness programs in the Global BU by 30%.</li>
-                                <li>**Bench Readiness Score:** <span class='font-bold text-amber-600'>72%</span>.</li>
-                            </ul>
-                        `;
-                    }
-                    
-                    // --- Initial/Default Triggers ---
-                    else if (lowerQuery.includes('forecast') || lowerQuery.includes('skill')) {
+                        response = `<p class="font-bold">📊 Organization-Wide Bench Planning (Q4)</p><p>Overall bench strength for Level 15+ critical roles:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Bench Depth:** **1.7X** (Overall target 2.0X).</li><li>**Critical Roles at Risk (Bench &lt; 1.0):** Chief Architect, Global Legal Head.</li><li>**Mitigation:** Initiate external search for high-risk roles. Increase budget allocation to accelerate readiness programs in the Global BU by 30%.</li><li>**Bench Readiness Score:** <span class='font-bold text-amber-600'>72%</span>.</li></ul>`;
+                    } else if (lowerQuery.includes('forecast') || lowerQuery.includes('skill')) {
                         window.chatContext[slideId] = 'skill_forecast_step1';
-                        response = `<p class="font-bold text-red-700">🔥 Strategic Skill Forecast: AI Leadership (Step 1 of 2)</p>
-                                    <p>Forecasting model output: Projected **skill deficit of 65% (120 FTEs)** in AI/ML Leadership by 2028. Status: **HIGH RISK**.</p>
-                                    <p class="mt-2 font-semibold">To inform strategy, would you like the **required investment budget** or a **regional risk breakdown**?</p>`;
+                        response = `<p class="font-bold text-red-700">🔥 Strategic Skill Forecast: AI Leadership (Step 1 of 2)</p><p>Forecasting model output: Projected **skill deficit of 65% (120 FTEs)** in AI/ML Leadership by 2028. Status: **HIGH RISK**.</p><p class="mt-2 font-semibold">To inform strategy, would you like the **required investment budget** or a **regional risk breakdown**?</p>`;
                     } else if (lowerQuery.includes('critical role') || lowerQuery.includes('vacancy risk')) {
                         window.chatContext[slideId] = null;
-                         response = `
-                            <p class="font-bold text-red-700">🛑 Critical Role Vacancy Risk Assessment:</p>
-                            <p>Analyzing high-impact, low-redundancy roles (Level 15+):</p>
-                            <ul class="list-disc list-inside mt-2 space-y-1">
-                                <li>**Top Risk:** **Chief Architect - Cloud Platforms** (Succession Readiness: 10%). Risk Score: <span class='font-bold text-red-600'>9.5/10</span>.</li>
-                                <li>**Mitigation:** Expedite external executive search for this role; simultaneously establish a 6-month cross-training program for 2 internal high-potentials.</li>
-                            </ul>
-                        `;
+                         response = `<p class="font-bold text-red-700">🛑 Critical Role Vacancy Risk Assessment:</p><p>Analyzing high-impact, low-redundancy roles (Level 15+):</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Top Risk:** **Chief Architect - Cloud Platforms** (Succession Readiness: 10%). Risk Score: <span class='font-bold text-red-600'>9.5/10</span>.</li><li>**Mitigation:** Expedite external executive search for this role; simultaneously establish a 6-month cross-training program for 2 internal high-potentials.</li></ul>`;
                     } else if (lowerQuery.includes('diversity') || lowerQuery.includes('leadership diversity')) {
                         window.chatContext[slideId] = null;
-                         response = `
-                            <p class="font-bold">📊 Leadership Diversity Report (Level 12+):</p>
-                            <p>Analyzing gender and regional diversity metrics:</p>
-                            <ul class="list-disc list-inside mt-2 space-y-1">
-                                <li>**Gender Balance:** Female representation at L12+ is 28% (Target: 35%).</li>
-                                <li>**Regional:** North BU is underrepresented in the CXO pipeline (Down 10% YoY).</li>
-                                <li>**Action:** Launch a targeted diversity leadership sponsorship program in Q1 for high-potential female leaders and the North BU.</li>
-                            </ul>
-                        `;
+                         response = `<p class="font-bold">📊 Leadership Diversity Report (Level 12+):</p><p>Analyzing gender and regional diversity metrics:</p><ul class="list-disc list-inside mt-2 space-y-1"><li>**Gender Balance:** Female representation at L12+ is 28% (Target: 35%).</li><li>**Regional:** North BU is underrepresented in the CXO pipeline (Down 10% YoY).</li><li>**Action:** Launch a targeted diversity leadership sponsorship program in Q1 for high-potential female leaders and the North BU.</li></ul>`;
                     } else {
                         window.chatContext[slideId] = null;
                         response = "Greetings, **Vikram**! I'm Aarav. I provide strategic foresight based on company-wide talent data. Try asking for a 'strategic skill forecast', 'find successor for CMO', or 'review org bench strength'.";
@@ -955,12 +829,11 @@
                 }
 
                 addMessage(slideId, response, true);
-            }, 500); // 0.5 second delay
+            }, 500);
         }
 
         /**
          * Handles the submission of the chat form.
-         * @param {string} slideId - The ID of the current chat slide.
          */
         function handleChatSubmit(slideId) {
             const inputField = document.getElementById(`chat-input-${slideId}`);
@@ -968,19 +841,13 @@
 
             if (query === '') return;
 
-            // 1. Add user message
             addMessage(slideId, query, false);
-
-            // 2. Clear input
             inputField.value = '';
-
-            // 3. Get simulated agent response
             simulateAgentResponse(slideId, query);
         }
 
         /**
          * Initializes the live chat window with welcome messages and listeners.
-         * @param {string} slideId - The ID of the slide being shown.
          */
         function setupLiveChat(slideId) {
             const chatWindow = document.getElementById(`chat-window-${slideId}`);
@@ -988,15 +855,11 @@
             
             if (!chatWindow) return;
             
-            // Clear previous messages and add initial welcome message
             chatWindow.innerHTML = '';
-            
-            // Reset context when entering the slide
             window.chatContext[slideId] = null;
             
             let welcomeMessage = "";
             
-            // Initial messages updated to include Aarav
             if (slideId === 'slide-2') {
                 welcomeMessage = "Welcome, **Rohan**! I'm Aarav, ready to guide your career. Try asking me to **'Next Level Succession'** to start a multi-step conversation, or ask about your 'skills needed for VP'.";
             } else if (slideId === 'slide-4') {
@@ -1007,10 +870,9 @@
 
             addMessage(slideId, welcomeMessage, true);
 
-            // Add listener for 'Enter' key press on the input field
             inputField.onkeydown = (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevent form submission if input were inside a form
+                    event.preventDefault();
                     handleChatSubmit(slideId);
                 }
             };
@@ -1021,19 +883,16 @@
 
         /**
          * Shows the specified slide and updates navigation state.
-         * @param {number} index - The index of the slide to show.
          */
         function showSlide(index) {
             if (index < 0 || index >= slides.length) {
                 return;
             }
 
-            // 1. Hide all slides
             document.querySelectorAll('.presentation-slide').forEach(slide => {
                 slide.style.display = 'none';
             });
 
-            // 2. Show the target slide
             const targetSlide = document.getElementById(slides[index]);
             if (targetSlide) {
                 targetSlide.style.display = 'block';
@@ -1051,11 +910,9 @@
             const nextBtn = document.getElementById('nextBtn');
             const indicator = document.getElementById('slideIndicator');
 
-            // Check if buttons exist before using them (they only exist inside app-container)
             if (prevBtn) {
                 prevBtn.disabled = (currentSlideIndex === 0);
                 nextBtn.disabled = (currentSlideIndex === slides.length - 1);
-                // Slides.length is 7, so indicator is correct
                 indicator.textContent = `Slide ${currentSlideIndex + 1} of ${slides.length}`;
             }
         }
@@ -1070,9 +927,9 @@
             showSlide(currentSlideIndex - 1);
         }
 
-        // Initialize the presentation on load
+        // Initialize the presentation on load by showing the authentication modal
         window.onload = function() {
-            showSlide(0);
+            // No need to call showSlide(0) here; it's called on successful login
         };
 
     </script>
