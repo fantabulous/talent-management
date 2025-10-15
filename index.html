@@ -11,6 +11,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light gray-blue background */
+            margin: 0; /* REMOVED DEFAULT BODY MARGIN */
         }
         .presentation-slide {
             min-height: 550px;
@@ -110,7 +111,7 @@
 
     <!-- App Container (Hidden initially, shown after authentication) -->
     <div id="app-container" class="hidden">
-        <div id="app" class="p-4 md:p-10">
+        <div id="app" class="p-4 md:p-10 pt-0 md:pt-0">
             <!-- Header (Logo removed, font size reduced) -->
             <header class="text-center mb-8">
                 <!-- Removed: <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 tracking-tight">
